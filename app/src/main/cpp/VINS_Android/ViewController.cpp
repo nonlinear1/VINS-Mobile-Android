@@ -104,48 +104,17 @@ void ViewController::viewDidLoad() {
     bool deviceCheck = setGlobalParam(deviceName());
     if (!deviceCheck) {
         LOGE("Device not supported");
-        /* 
-        UIAlertController *alertDevice = [UIAlertController alertControllerWithTitle:@"Unsupported Device"
-        message:@"Supported devices are: iPhone7 Plus, iPhone7, iPhone6s Plus, iPhone6s" preferredStyle:UIAlertControllerStyleAlert];
-    
-        UIAlertAction *okAction = [UIAlertAction
-        actionWithTitle:@"OK"
-        style:UIAlertActionStyleDefault
-        handler:^(UIAlertAction * _Nonnull action) {
-    
-        }];
-    
-        [alertDevice addAction:okAction];
-    
-        dispatch_async(dispatch_get_main_queue(), ^ {
-            [self presentViewController:alertDevice animated:YES completion:nil];
-        });
-        */
     }
     vins.setExtrinsic();
     vins.setIMUModel();
     featuretracker.vins_pnp.setExtrinsic();
     featuretracker.vins_pnp.setIMUModel();
     bool versionCheck = iosVersion();
-    if (!versionCheck) {
-        /*
-        UIAlertController *alertVersion = [UIAlertController alertControllerWithTitle:@"Warn"
-        message:@"Please upgrade your iOS version!" preferredStyle:UIAlertControllerStyleAlert];
-        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction * action)
-            {exit(0);}];
-        UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action)
-            {exit(0);}];
-        [alertVersion addAction:cancelAction];
-        [alertVersion addAction:okAction];
-        dispatch_async(dispatch_get_main_queue(), ^ {
-            [self presentViewController:alertVersion animated:YES completion:nil];
-        });
-        */
-    }
 
     /*********************************************Start VINS*******************************************/
     if (versionCheck && deviceCheck) {
-        imuStartUpdate(); // [self imuStartUpdate];
+        // 使用java端传入的imu
+//        imuStartUpdate(); // [self imuStartUpdate];
         isCapturing = true;
         // TODO: Move mainLoopInit here
         // [mainLoop start]; 
@@ -161,38 +130,17 @@ void ViewController::viewDidLoad() {
 void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScreenRotated) {
 
     TS(ViewController_processImage);
-//- (void)processImage:(cv::Mat&)image {
-//    LOGI("Mat Width(cols): %d, Height(rows): %d isCapturing: %d", image.cols, image.rows, isCapturing);
 
     if (isCapturing) {
-        /*
-        //__android_log_print(ANDROID_LOG_INFO, APPNAME, "image processing");
-        float lowPart = image.at<float>(0,0);  //modify opencv library, timestamp was stored at index 0,0
-        float highPart = image.at<float>(0,1);
-        //image.at<float>(0,0) = image.at<float>(1,0);
-        //image.at<float>(0,1) = image.at<float>(1,1);
-        */
         shared_ptr<IMG_MSG> img_msg(new IMG_MSG());
-        /*
-        //cout << (videoCamera->grayscaleMode) << endl;
-        //img_msg->header = [[NSDate date] timeIntervalSince1970];
-        */
         img_msg->header = systemUptime();//[[NSProcessInfo processInfo] systemUptime];
-        /*
-        float Group[2];
-        Group[0] = lowPart;
-        Group[1] = highPart;
-        double* time_now_decode = (double*)Group;
-        double time_stamp = *time_now_decode;
-        */
         if (lateast_imu_time <= 0) {
             LOGI("IMU Timestamp negative: %lf, abort processImage()", lateast_imu_time);
             if (isScreenRotated)
                 cv::rotate(image, image, cv::ROTATE_180);
             return;
         }
-        //img_msg->header = lateast_imu_time;
-        img_msg->header = timeStamp; // img_msg->header = time_stamp;
+        img_msg->header = timeStamp;
         LOGI("image timeStamp%lf", timeStamp);
         // if this is the case the feature-tracker wont work because the mask is cols x rows 480x640
         bool isNeedRotation = image.size() != frameSize;
@@ -200,50 +148,11 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
 
         //for save data
         cv::Mat input_frame;
-        /*
-        if(start_playback) {
-            //TS(readImg);
-            bool still_play;
-            still_play = readImageTime(imageDataReadIndex); // [self readImageTime:imageDataReadIndex];
-            readImage(imageDataReadIndex); // [self readImage:imageDataReadIndex];
-            if(!still_play)
-                return;
-            imageDataReadIndex++;
-#ifdef DATA_EXPORT
-            tapSaveImageToIphone(imgData.image); // [self tapSaveImageToIphone:imgData.image];
-#endif
-            image = imgData.image; // UIImageToMat(imgData.image,image);
-            input_frame = imgData.image; // UIImageToMat(imgData.image,input_frame);
-            img_msg->header = imgData.header;
-            //TE(readImg);
-#ifdef DATA_EXPORT
-            printf("record play image: %lf\n", imgData.header, imageDataReadIndex);
-#endif
-        }
-        else
-        {*/
         input_frame = image;
-        /*}*/
-
-        /*
-        if(start_record)
-        {
-            LOGE("Recording isn't supported yet");
-            imgData.header = img_msg->header;
-            imgData.image = image; // imgData.image = MatToUIImage(image);
-            imgDataBuf.push(imgData);
-            return;
-        }
-        else
-        {*/
-        // terminate method if buffer isn't empty but recording isn't enabled either
         if (!imgDataBuf.empty()) {
             LOGI("!imgDataBuf.empty(), abort processImage()");
             return;
         }
-        /*}*/
-
-        // never used? prevTime = mach_absolute_time();
 
         cv::Mat gray;
         cv::cvtColor(input_frame, gray, CV_RGBA2GRAY);
@@ -252,8 +161,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
         clahe->setClipLimit(3);
         clahe->apply(gray, img_equa);
-        //img_equa = gray;
-//        TS(time_feature);
+        TS(time_feature);
 
 
         m_depth_feedback.lock();
@@ -271,7 +179,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
         featuretracker.use_pnp = USE_PNP;
         featuretracker.readImage(img_equa, img_with_feature, frame_cnt, good_pts, track_len,
                                  img_msg->header, pnp_P, pnp_R, vins_normal);
-//        TE(time_feature);
+        TE(time_feature);
         // painting the dots for the feature visualization
         for (int i = 0; i < good_pts.size(); i++) {
             cv::circle(image, good_pts[i], 0,
@@ -288,7 +196,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
             //img_msg callback
             m_buf.lock();
             img_msg_buf.push(img_msg);
-            //__android_log_print(ANDROID_LOG_INFO, APPNAME, "Img timestamp %lf",img_msg_buf.front()->header);
+            LOGI("Img timestamp %lf",img_msg_buf.front()->header);
             m_buf.unlock();
             con.notify_one();
             if (imageCacheEnabled) {
@@ -367,7 +275,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
             }
         } else //show VINS
         {
-//            TS(vins_draw);
+            TS(vins_draw);
             // You should'nt get here if this is false
             assert(vins.solver_flag == VINS::NON_LINEAR);
             if (vins.solver_flag == VINS::NON_LINEAR) {
@@ -389,7 +297,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
                                              vins.correct_Rs, vins.correct_Ps, box_in_trajectory);
             }
             cv::Mat tmp2 = vins.image_show;
-//            TE(vins_draw);
+            TE(vins_draw);
 
             cv::Mat down_origin_image;
 //            TS(Window_resize); // 0.65ms
@@ -963,7 +871,7 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 
 
         //interpolation
-        shared_ptr<IMU_MSG> imu_msg(new IMU_MSG());
+        ImuPtr imu_msg(new IMU_MSG());
 //        LOGI("instance->cur_acc->header: \t\t%lf \ninstance->gyro_buf[0].header: \t%lf \ninstance->gyro_buf[1].header: \t%lf", instance->cur_acc->header, instance->gyro_buf[0].header, instance->gyro_buf[1].header);
         if (instance->cur_acc->header >= instance->gyro_buf[0].header &&
             instance->cur_acc->header < instance->gyro_buf[1].header) {
@@ -985,27 +893,7 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 
         //TODO: add playback and recording back in
 
-//        LOGI("pushing new imu_msg & setting lateast_imu_time: %lf \nAcc: %lf %lf %lf \nGyro: %lf %lf %lf", imu_msg->header, 
-//             imu_msg->acc[0], imu_msg->acc[1], imu_msg->acc[2],
-//             imu_msg->gyr[0], imu_msg->gyr[1], imu_msg->gyr[2]);
-        instance->lateast_imu_time = imu_msg->header;
-
-        //img_msg callback
-        {
-            IMU_MSG_LOCAL imu_msg_local;
-            imu_msg_local.header = imu_msg->header;
-            imu_msg_local.acc = imu_msg->acc;
-            imu_msg_local.gyr = imu_msg->gyr;
-
-            instance->m_imu_feedback.lock();
-            instance->local_imu_msg_buf.push(imu_msg_local);
-            instance->m_imu_feedback.unlock();
-        }
-        instance->m_buf.lock();
-        instance->imu_msg_buf.push(imu_msg);
-        //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
-        instance->m_buf.unlock();
-        instance->con.notify_one();
+        instance->recv_imu(imu_msg);
     }
 
     //should return 1 to continue receiving callbacks, or 0 to unregister                                                                                                                           
@@ -1302,4 +1190,29 @@ void ViewController::loopButtonPressed(bool isChecked) {
         LOOP_CLOSURE = false;
         LOGI("Loop Closure disabled");
     }
+}
+
+void ViewController::recv_imu(const ImuConstPtr &imu_msg) {
+    LOGI("pushing new imu_msg & setting lateast_imu_time: %lf \nAcc: %lf %lf %lf \nGyro: %lf %lf %lf",
+         imu_msg->header,
+         imu_msg->acc[0], imu_msg->acc[1], imu_msg->acc[2],
+         imu_msg->gyr[0], imu_msg->gyr[1], imu_msg->gyr[2]);
+    instance->lateast_imu_time = imu_msg->header;
+
+    //img_msg callback
+    {
+        IMU_MSG_LOCAL imu_msg_local;
+        imu_msg_local.header = imu_msg->header;
+        imu_msg_local.acc = imu_msg->acc;
+        imu_msg_local.gyr = imu_msg->gyr;
+
+        instance->m_imu_feedback.lock();
+        instance->local_imu_msg_buf.push(imu_msg_local);
+        instance->m_imu_feedback.unlock();
+    }
+    instance->m_buf.lock();
+    instance->imu_msg_buf.push(imu_msg);
+    //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
+    instance->m_buf.unlock();
+    instance->con.notify_one();
 }

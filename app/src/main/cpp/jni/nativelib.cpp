@@ -29,6 +29,7 @@ Java_com_thkoeln_jmoeller_vins_1mobile_1androidport_VinsJNI_init(JNIEnv *env, jo
 
     // startup method of ViewController
     viewControllerGlobal->viewDidLoad();
+    viewControllerGlobal->imuStartUpdate();
 }
 
 extern "C"

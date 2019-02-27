@@ -33,18 +33,19 @@
 // added in the continous process of tranlating objective c code
 #include <condition_variable> // std::condition_variable con
 #include <android/log.h>
-#define LOG_TAG "ViewController.cpp"
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define printf(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO, __FILE__, __VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
+#define printf(...)  __android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
 
 typedef double NSTimeInterval;
 #define APPNAME "VINS_Android"
+
 #include <thread>
 #include <jni.h>
 
 extern "C" {
-    #include <time.h>
+#include <time.h>
 }
 
 #include <android/looper.h>
@@ -97,8 +98,10 @@ struct VINS_DATA_CACHE {
     Matrix3f R;
 };
 
-typedef shared_ptr <IMU_MSG const > ImuConstPtr;
-typedef shared_ptr <IMG_MSG const > ImgConstPtr;
+typedef shared_ptr<IMU_MSG> ImuPtr;
+typedef shared_ptr<IMG_MSG> ImgPtr;
+typedef shared_ptr<IMU_MSG const> ImuConstPtr;
+typedef shared_ptr<IMG_MSG const> ImgConstPtr;
 //@end
 
 
@@ -109,7 +112,7 @@ class ViewController {
 private:
     const int videoWidth = 360;
     const int videoHeight = 640;
-    
+
     // CvVideoCamera is only for iOS
     //CvVideoCamera* videoCamera;
     bool isCapturing;
@@ -250,6 +253,7 @@ private:
 public:
     NSTimeInterval getLateast_imu_time() const;
 
+
 private:
 
     int imu_prepare = 0;
@@ -263,10 +267,10 @@ private:
     static ASensorEventQueue *accelerometerEventQueue;
     static ASensorEventQueue *gyroscopeEventQueue;
 
-    static int process_imu_sensor_events(int fd, int events, void* data);
+    static int process_imu_sensor_events(int fd, int events, void *data);
 
     // singleton for static callbacks
-    static ViewController* instance;
+    static ViewController *instance;
 
 // Segment the trajectory using color when re-initialize
     int segmentation_index = 0;
@@ -335,16 +339,38 @@ private:
 
 // Implied, updated by updateCameraMode()
     bool imageCacheEnabled = cameraMode && !USE_PNP;
-    
+
 public:
     ViewController();
+
     ~ViewController();
 
-    inline static double timeStampToSec (long timeStamp) { return timeStamp / 1000000000.0; };
+    inline static double timeStampToSec(long timeStamp) { return timeStamp / 1000000000.0; };
+
     static NSTimeInterval systemUptime();
 
-    void testMethod(){
+    void testMethod() {
         LOGI("Testmethod is working");
+    }
+
+    vector<Vector3f> getCorrectPointCloud() {
+        return vins.correct_point_cloud;
+    }
+
+    Vector3f getLatestPosition() {
+        return lateast_P;
+    }
+
+    Matrix3f getLatestRotation() {
+        return lateast_R;
+    }
+
+    int getInitProcess() {
+        return vins.initProgress;
+    }
+
+    bool initSucess() {
+        return vins.init_status == VINS::InitStatus::SUCC;
     }
 
     std::mutex viewUpdateMutex;
@@ -356,9 +382,9 @@ public:
     std::string tvBufText;
     std::string tvLoopText{"LOOP:"};
     bool initImageVisible = true;
-    
+
     float virtualCamDistance = 5;
-    
+
 // MARK: ViewController Methods
 
     void viewDidLoad();
@@ -382,7 +408,7 @@ public:
     /**
      * Takes RGBA doesnt change the format!
      */
-    void processImage(cv::Mat& image, double timeStamp, bool isScreenRotated);
+    void processImage(cv::Mat &image, double timeStamp, bool isScreenRotated);
 
 
 /*
@@ -397,10 +423,12 @@ public:
      */
     vector<IMU_MSG_LOCAL> getImuMeasurements(double header);
 
+    void recv_imu(const ImuConstPtr &imu_msg);
     void send_imu(const ImuConstPtr &imu_msg);
 
     //TODO: solve quick fix
     bool mainLoop_isCancelled = false;
+
     /**
      * VINS thread: this thread tightly fuses the visual measurements and imu data and solves pose, velocity, IMU bias, 3D feature for all frame in WINNDOW
      * If the newest frame is keyframe, then push it into keyframe database
@@ -409,11 +437,13 @@ public:
 
     int kf_global_index;
     bool start_global_optimization = false;
+
     void process();
 
 
     //TODO: solve quick fix
     bool loop_thread_isCancelled = false;
+
     /**
      * Loop detection thread: this thread detect loop for newest keyframe and retrieve features
      */
@@ -421,6 +451,7 @@ public:
 
     //TODO: solve quick fix
     bool globalLoopThread_isCancelled = false;
+
     /**
      * GLobal Pose graph thread: optimize global pose graph based on realative pose from vins and update the keyframe database
      */
@@ -437,16 +468,18 @@ public:
      */
     bool imuDataFinished = false;
     bool vinsDataFinished = false;
-    shared_ptr<IMU_MSG> cur_acc = shared_ptr<IMU_MSG>(new IMU_MSG()); // shared_ptr<IMU_MSG> cur_acc(new IMU_MSG());
+    shared_ptr<IMU_MSG> cur_acc = shared_ptr<IMU_MSG>(
+            new IMU_MSG()); // shared_ptr<IMU_MSG> cur_acc(new IMU_MSG());
     vector<IMU_MSG> gyro_buf;  // for Interpolation
     void imuStartUpdate();
+
     void imuStopUpdate();
 
 /********************************************************************UI View Controler********************************************************************/
     void showInputView();
 
     // Where is this coming from (delegate)? It's not being called anywhere.
-    void showOutputImage(cv::Mat* image) {
+    void showOutputImage(cv::Mat *image) {
 //-(void)showOutputImage:(UIImage*)image
 //{
         //TODO: [featureImageView setImage:image];
@@ -497,7 +530,7 @@ public:
         self.fovLabel.text = [[NSNumber numberWithFloat:self.fovSlider.value] stringValue];
     }
     */
-    
+
     // TODO: Gestensteuerung?
     // pan
     /*
@@ -634,7 +667,7 @@ public:
         }
     }
     */
-    
+
     // tap
     /*
     void handleTap(UITapGestureRecognizer* recognizer) {
@@ -679,7 +712,7 @@ public:
     }
     */
 
-    
+
     /// loop button
     void loopButtonPressed(bool isChecked);
     /*
@@ -762,11 +795,12 @@ public:
 
     //TODO: solve quick fix
     bool saveData_isCancelled = false;
+
     void saveDataLoop();
 
-    void tapSaveImageToIphone(cv::Mat* image) {
-    //- (void)tapSaveImageToIphone:(UIImage*)image
-    //{
+    void tapSaveImageToIphone(cv::Mat *image) {
+        //- (void)tapSaveImageToIphone:(UIImage*)image
+        //{
         // TODO: save image to Album
         // UIImageWriteToSavedPhotosAlbum(image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
     }
@@ -815,8 +849,8 @@ public:
     */
 
     void recordImu() {
-    //- (void)recordImu
-    //{
+        //- (void)recordImu
+        //{
         // TODO: write imuDataBuf to file
         /*
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -829,8 +863,8 @@ public:
     }
 
     void recordVins() {
-    //- (void)recordVins
-    //{
+        //- (void)recordVins
+        //{
         // TODO: write vinsDataBuf to file
         /*
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -842,7 +876,7 @@ public:
         */
     }
 
-    void recordImageTime(IMG_DATA& image_data) {
+    void recordImageTime(IMG_DATA &image_data) {
 //- (void)recordImageTime:(IMG_DATA&)image_data
 //{
         // TODO: write image_data.header (time) to file
@@ -861,7 +895,7 @@ public:
         */
     }
 
-    void recordImage(IMG_DATA& image_data) {
+    void recordImage(IMG_DATA &image_data) {
 //- (void)recordImage:(IMG_DATA&)image_data
 //{
         // TODO: write image_data.image to file
@@ -962,8 +996,7 @@ public:
 //- (void)viewDidDisappear:(BOOL)animated
 //{
         // [super viewDidDisappear:animated];
-        if (isCapturing)
-        {
+        if (isCapturing) {
             // TODO: stop the camera [videoCamera stop];
         }
         mainLoop_isCancelled = true; // [mainLoop cancel];

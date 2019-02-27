@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     }
 
     /**
-     * initializes an new VinsJNI Object
+     * initializes an new VinsUtils Object
      */
     private void initVINS() {
         vinsJNI = new VinsJNI();
@@ -367,11 +367,11 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private void updateCameraView(CameraCaptureSession session)
             throws CameraAccessException {
         // 不自动对焦
-        previewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f);
+//        previewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f);
         previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CONTROL_AF_MODE_OFF);
 //        previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
         // 不自动白平衡
-        previewBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_OFF);
+//        previewBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_OFF);
         session.setRepeatingRequest(previewBuilder.build(), null, handler);
     }
 

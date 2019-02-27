@@ -15,6 +15,10 @@ android {
                 cppFlags "-std=gnu++11 -frtti -fopenmp -fexceptions -O3 -funsafe-math-optimizations"
             }
         }
+        ndk{
+//            abiFilters 'armeabi-v7a'
+            abiFilters 'arm64-v8a'
+        }
     }
     buildTypes {
         release {
@@ -28,7 +32,11 @@ android {
         }
     }
 }
-
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
@@ -37,4 +45,5 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
+    implementation(name:'opencv345-debug', ext:'aar')
 }

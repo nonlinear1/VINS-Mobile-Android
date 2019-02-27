@@ -142,12 +142,12 @@ bool setGlobalParam(DeviceType device)
             break;
         case Mix2:
             printf("Device Mix2 param\n");
-            FOCUS_LENGTH_X = 479.46870;
-            FOCUS_LENGTH_Y = 479.18489;
+            FOCUS_LENGTH_X = 492.736;
+            FOCUS_LENGTH_Y = 492.653;
 //            PX = 322.14508;
 //            PY = 177.33389;
-            PX = 231.9446;
-            PY = 319.5067;
+            PX = 172.749;
+            PY = 324.371;
 
             SOLVER_TIME =  0.06; // 0.06 TODO
             FREQ = 3;

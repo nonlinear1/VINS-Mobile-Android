@@ -58,3 +58,15 @@ target_link_libraries(
     # included in the NDK.
     #${log-lib}
 )
+
+add_library(
+        vins_android_wrapper
+        SHARED
+        src/main/cpp/android/android_wrapper.cpp
+)
+
+target_link_libraries(
+        vins_android_wrapper
+        VINS_Android
+        ${log-lib}
+)
