@@ -152,11 +152,11 @@ public class JavaCameraActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (isRecording) {
-                    vins.stopRecord();
+                    vins.slamRecorder.stopRecord();
                 } else {
-                    vins.startRecord();
+                    vins.slamRecorder.startRecord();
                 }
-                isRecording = vins.isRecording();
+                isRecording = vins.slamRecorder.isRecording();
                 ((TextView) v).setText(isRecording ? "停止" : "录像");
             }
         });
