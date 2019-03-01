@@ -18,7 +18,13 @@
             android:id="@+id/save_image"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="截图" />
+            android:text="截屏" />
+
+        <Button
+            android:id="@+id/record"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="录像" />
 
         <TextView
             android:id="@+id/tv_info"
@@ -26,6 +32,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/colorPrimaryDark"
             android:textSize="18sp" />
+
         <TextView
             android:id="@+id/tv_gps_info"
             android:layout_width="wrap_content"

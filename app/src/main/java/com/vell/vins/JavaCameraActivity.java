@@ -1,6 +1,5 @@
 package com.vell.vins;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -11,12 +10,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureRequest;
 import android.location.Criteria;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
@@ -26,19 +20,13 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.util.Rational;
-import android.view.Surface;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,7 +35,6 @@ import com.thkoeln.jmoeller.vins_mobile_androidport.R;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -57,9 +44,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.IntStream;
-
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
 
 public class JavaCameraActivity extends Activity {
     private static final String TAG = JavaCameraActivity.class.getSimpleName();
@@ -160,6 +144,20 @@ public class JavaCameraActivity extends Activity {
             @Override
             public void onClick(View v) {
                 saveFrame = true;
+            }
+        });
+        findViewById(R.id.record).setOnClickListener(new View.OnClickListener() {
+            boolean isRecording = false;
+
+            @Override
+            public void onClick(View v) {
+                if (isRecording) {
+                    vins.stopRecord();
+                } else {
+                    vins.startRecord();
+                }
+                isRecording = vins.isRecording();
+                ((TextView) v).setText(isRecording ? "停止" : "录像");
             }
         });
         findViewById(R.id.java_camera_view).setOnClickListener(new View.OnClickListener() {
