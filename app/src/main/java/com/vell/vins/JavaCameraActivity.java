@@ -66,28 +66,9 @@ public class JavaCameraActivity extends Activity {
     private static final int PERMISSIONS_REQUEST_CODE = 12345;
     private final int imageWidth = 640;
     private final int imageHeight = 360;
-    private HandlerThread threadHandler;
-    private Handler cameraHandler;
-    private String cameraID = "0";
-    private CameraDevice camera;
-    private CaptureRequest.Builder captureBuilder;
     private ImageReader imageReader;
+    private JavaCamera javaCamera;
     private Vins vins;
-    private CameraCaptureSession.StateCallback sessionStateCallback = new CameraCaptureSession.StateCallback() {
-        @Override
-        public void onConfigured(CameraCaptureSession session) {
-            try {
-                updateCameraView(session);
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onConfigureFailed(CameraCaptureSession session) {
-
-        }
-    };
     private boolean saveFrame = false;
     private File saveDir = new File(Environment.getExternalStorageDirectory(), "1_test");
     private boolean useLocalImage = true;
@@ -147,44 +128,6 @@ public class JavaCameraActivity extends Activity {
         }
     };
 
-    private CameraDevice.StateCallback cameraDeviceStateCallback = new CameraDevice.StateCallback() {
-
-        @Override
-        public void onOpened(CameraDevice cameraDevice) {
-            try {
-                camera = cameraDevice;
-
-                startCameraView(camera);
-
-                if (vins != null) {
-                    vins.init(getCameraCharacteristics(cameraDevice));
-                    VinsUtils.enableAR(true);
-                }
-
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onDisconnected(CameraDevice camera) {
-        }
-
-        @Override
-        public void onError(CameraDevice camera, int error) {
-        }
-    };
-
-    private CameraCharacteristics getCameraCharacteristics(CameraDevice cameraDevice) throws CameraAccessException {
-        final String cameraId = cameraDevice.getId();
-        final CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        return cameraManager.getCameraCharacteristics(cameraId);
-    }
-
-    static {
-        System.loadLibrary("opencv_java3");
-    }
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -192,22 +135,13 @@ public class JavaCameraActivity extends Activity {
         // first make sure the necessary permissions are given
         checkPermissionsIfNeccessary();
 
-        initLooper();
+        // to set the format of captured images and the maximum number of images that can be accessed in mImageReader
+        imageReader = ImageReader.newInstance(imageWidth, imageHeight, ImageFormat.YUV_420_888, 1);
 
-        try {
-            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        imageReader.setOnImageAvailableListener(onImageAvailableListener, null);
 
-            // check permissions
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                checkPermissionsIfNeccessary();
-                return;
-            }
-
-            // start up Camera (not the recording)
-            cameraManager.openCamera(cameraID, cameraDeviceStateCallback, cameraHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+        javaCamera = new JavaCamera();
+        javaCamera.addImageReader(imageReader);
 
         findViewById(R.id.tv_info).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -226,6 +160,15 @@ public class JavaCameraActivity extends Activity {
             @Override
             public void onClick(View v) {
                 saveFrame = true;
+            }
+        });
+        findViewById(R.id.java_camera_view).setOnClickListener(new View.OnClickListener() {
+            boolean enable = false;
+
+            @Override
+            public void onClick(View v) {
+                enable = !enable;
+                VinsUtils.enableAR(enable);
             }
         });
 
@@ -259,68 +202,35 @@ public class JavaCameraActivity extends Activity {
         });
     }
 
-    /**
-     * Starting separate thread to handle camera input
-     */
-    private void initLooper() {
-        threadHandler = new HandlerThread("Camera2Thread");
-        threadHandler.start();
-        cameraHandler = new Handler(threadHandler.getLooper());
+    @Override
+    protected void onResume() {
+        super.onResume();
+        javaCamera.open(this, new CameraDevice.StateCallback() {
+            @Override
+            public void onOpened(CameraDevice camera) {
+                try {
+                    vins.init(javaCamera.getCameraCharacteristics());
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onDisconnected(CameraDevice camera) {
+
+            }
+
+            @Override
+            public void onError(CameraDevice camera, int error) {
+
+            }
+        });
     }
 
-
-    /**
-     * starts CameraView
-     */
-    private void startCameraView(CameraDevice camera) throws CameraAccessException {
-        try {
-            // to set request for CameraView
-            captureBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-
-        // to set the format of captured images and the maximum number of images that can be accessed in mImageReader
-        imageReader = ImageReader.newInstance(imageWidth, imageHeight, ImageFormat.YUV_420_888, 1);
-
-        imageReader.setOnImageAvailableListener(onImageAvailableListener, cameraHandler);
-
-        CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraID);
-        // get the StepSize of the auto exposure compensation
-        Rational aeCompStepSize = characteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
-        if (aeCompStepSize == null) {
-            Log.e(TAG, "Camera doesn't support setting Auto-Exposure Compensation");
-            finish();
-        }
-        Float yourMinFocus = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
-        Float yourMaxFocus = characteristics.get(CameraCharacteristics.LENS_INFO_HYPERFOCAL_DISTANCE);
-        Log.i(TAG, "focus min: " + yourMinFocus + " max: " + yourMaxFocus);
-
-        // 不自动对焦
-        captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CONTROL_AF_MODE_OFF);
-//        captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, 2.0f);
-        // 固定iso
-//        captureBuilder.set(CaptureRequest.SENSOR_SENSITIVITY,);
-
-        // 不自动白平衡
-//        captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_OFF);
-        captureBuilder.addTarget(imageReader.getSurface());
-
-        //output Surface
-        List<Surface> outputSurfaces = new ArrayList<>();
-        outputSurfaces.add(imageReader.getSurface());
-
-        camera.createCaptureSession(outputSurfaces, sessionStateCallback, cameraHandler);
-    }
-
-    /**
-     * Starts the RepeatingRequest for
-     */
-    private void updateCameraView(CameraCaptureSession session)
-            throws CameraAccessException {
-
-        session.setRepeatingRequest(captureBuilder.build(), null, cameraHandler);
+    @Override
+    protected void onPause() {
+        super.onPause();
+        javaCamera.close();
     }
 
     /**
