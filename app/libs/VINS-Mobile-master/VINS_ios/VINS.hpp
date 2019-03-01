@@ -25,6 +25,7 @@
 #include "motion_estimator.hpp"
 
 extern bool LOOP_CLOSURE;
+extern bool GLOBAL_OPTIMISE;
 struct RetriveData
 {
     /* data */

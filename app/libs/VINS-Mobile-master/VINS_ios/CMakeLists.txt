@@ -42,6 +42,7 @@ set(vinsmobile_SRCS
 
 add_subdirectory(delaunay)
 add_subdirectory(loop)
+add_subdirectory(global)
 
 
 set(TARGET_NAME VINSMobile)
@@ -55,6 +56,7 @@ target_include_directories(${TARGET_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(${TARGET_NAME} Delaunay)
 target_link_libraries(${TARGET_NAME} Loop)
+target_link_libraries(${TARGET_NAME} Global)
 
 target_link_libraries(
     ${TARGET_NAME}

@@ -28,6 +28,7 @@
 #include "keyframe.h"
 #include "loop_closure.h"
 #include "keyfame_database.h"
+#include "globalOpt.h"
 #import <sys/utsname.h>
 
 // added in the continous process of tranlating objective c code
@@ -408,6 +409,7 @@ public:
     cv::Mat lateast_image; //UIImage *lateast_image;
     Vector3f lateast_P;
     Matrix3f lateast_R;
+    GlobalOptimization *globalOptimization = nullptr; // 全局优化器，基于GPS
 
     cv::Mat pnp_image;
     Vector3d pnp_P;

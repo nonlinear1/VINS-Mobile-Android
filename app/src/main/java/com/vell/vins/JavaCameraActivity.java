@@ -17,6 +17,11 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.location.Criteria;
+import android.location.GpsSatellite;
+import android.location.GpsStatus;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
@@ -49,6 +54,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
@@ -226,6 +232,31 @@ public class JavaCameraActivity extends Activity {
         vins = new Vins();
 
         subscribeToImuUpdates(vins, SensorManager.SENSOR_DELAY_FASTEST);
+        subscribeToLocationUpdates(vins, 20);
+
+        // 增加gps信息展示
+        final LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager.addGpsStatusListener(new GpsStatus.Listener() {
+            @Override
+            public void onGpsStatusChanged(int event) {
+                GpsStatus status = locationManager.getGpsStatus(null); //取当前状态
+                StringBuilder gpsInfo = new StringBuilder();
+                gpsInfo.append("gps num: ");
+                if (status == null) {
+                    gpsInfo.append(0);
+                } else if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
+                    int maxSatellites = status.getMaxSatellites();
+                    Iterator<GpsSatellite> it = status.getSatellites().iterator();
+                    int count = 0;
+                    while (it.hasNext() && count <= maxSatellites) {
+                        GpsSatellite s = it.next();
+                        count++;
+                    }
+                    gpsInfo.append(count);
+                }
+                ((TextView) findViewById(R.id.tv_gps_info)).setText(gpsInfo.toString());
+            }
+        });
     }
 
     /**
@@ -343,6 +374,12 @@ public class JavaCameraActivity extends Activity {
         final SensorManager sm = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sm.registerListener(listener, sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE), delay);
         sm.registerListener(listener, sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), delay);
+    }
+
+    private void subscribeToLocationUpdates(LocationListener listener, long minTimeMsec) {
+        final LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        final String bestProvider = locationManager.getBestProvider(new Criteria(), false);
+        locationManager.requestLocationUpdates(bestProvider, minTimeMsec, 0.01f, listener);
     }
 
     static {

@@ -4,13 +4,16 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.camera2.CameraCharacteristics;
+import android.location.Location;
+import android.location.LocationListener;
+import android.os.Bundle;
 import android.util.Log;
 
 import org.opencv.core.Mat;
 
 import java.util.concurrent.TimeUnit;
 
-public class Vins implements SensorEventListener {
+public class Vins implements SensorEventListener, LocationListener {
     private static final String TAG = Vins.class.getSimpleName();
     private String configPath = "/sdcard/vell_vins/config/mix2_480p";
     private long cameraTimestampsShiftWrtSensors = 0;
@@ -38,6 +41,12 @@ public class Vins implements SensorEventListener {
         VinsUtils.recvImu(timeSec, ax, ay, az, gx, gy, gz);
     }
 
+    public void recvGPS(double timeSec, double latitude, double longitude, double altitude,
+                        double posAccuracy) {
+        Log.d(TAG, String.format("recvGPS: %f,%f,%f,%f,%f", timeSec, latitude, longitude, altitude, posAccuracy));
+        VinsUtils.recvGPS(timeSec, latitude, longitude, altitude, posAccuracy);
+    }
+
     private SensorEvent lastAccSensorEvent = null;
     private SensorEvent lastGyrSensorEvent = null;
 
@@ -48,10 +57,10 @@ public class Vins implements SensorEventListener {
         }
         switch (event.sensor.getType()) {
             case Sensor.TYPE_GYROSCOPE:
-                lastGyrSensorEvent= event;
+                lastGyrSensorEvent = event;
                 break;
             case Sensor.TYPE_ACCELEROMETER:
-                lastAccSensorEvent  = event;
+                lastAccSensorEvent = event;
                 break;
             case Sensor.TYPE_PRESSURE:
                 break;
@@ -74,6 +83,32 @@ public class Vins implements SensorEventListener {
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+        double altitude = location.getAltitude();
+        double accuracy = location.getAccuracy();
+        double timeSec = TimeUnit.NANOSECONDS.toMicros(location.getElapsedRealtimeNanos());
+
+        recvGPS(timeSec, latitude, longitude, altitude, accuracy);
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
 
     }
 }

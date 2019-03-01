@@ -30,6 +30,20 @@ Java_com_vell_vins_VinsUtils_recvImage(JNIEnv *env, jclass type, jdouble timeS, 
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_vell_vins_VinsUtils_recvGPS(JNIEnv *env, jclass type, jdouble timeSec, jdouble latitude,
+                                     jdouble longitude, jdouble altitude, jdouble posAccuracy) {
+
+    if (inited) {
+        if (viewControllerGlobal->globalOptimization != nullptr) {
+            viewControllerGlobal->globalOptimization->inputGPS(timeSec, latitude, longitude,
+                                                               altitude, posAccuracy);
+        }
+    }
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_vell_vins_VinsUtils_init(JNIEnv *env, jclass type, jstring configPath_) {
     const char *configPath = env->GetStringUTFChars(configPath_, 0);
     if (!inited) {
@@ -118,4 +132,21 @@ Java_com_vell_vins_VinsUtils_getLatestGroundCenter(JNIEnv *env, jclass type) {
     jfloatArray ret = env->NewFloatArray(3);
     env->SetFloatArrayRegion(ret, 0, 3, posJ);
     return ret;
+}
+
+extern "C"
+JNIEXPORT jfloatArray JNICALL
+Java_com_vell_vins_VinsUtils_getLatestGPS(JNIEnv *env, jclass type) {
+    Vector3d pos = viewControllerGlobal->getLatestPosition().cast<double>();
+    double latitude;
+    double longitude;
+    double altitude;
+    viewControllerGlobal->globalOptimization->XYZ2GPS(pos.data(), latitude, longitude, altitude);
+    jfloat posJ[3] = {
+            (float) latitude, (float) longitude, (float) altitude
+    };
+    jfloatArray ret = env->NewFloatArray(3);
+    env->SetFloatArrayRegion(ret, 0, 3, posJ);
+    return ret;
+
 }

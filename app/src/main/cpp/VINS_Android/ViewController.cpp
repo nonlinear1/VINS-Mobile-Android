@@ -17,6 +17,7 @@ ViewController::ViewController() {
 
 ViewController::~ViewController() {
     LOGI("ViewController Destructor");
+    delete globalOptimization;
 }
 
 void ViewController::viewDidLoad() {
@@ -98,6 +99,11 @@ void ViewController::viewDidLoad() {
             globalLoopThread=[[NSThread alloc]initWithTarget:self selector:@selector(globalLoopThread) object:nil];
             [globalLoopThread setName:@"globalLoopThread"];
             [globalLoopThread start];*/
+    }
+
+    if (GLOBAL_OPTIMISE) {
+        LOGI("GLOBAL_OPTIMISE true");
+        globalOptimization = new GlobalOptimization();
     }
 
     /************************************Device and iOS version check************************************/
@@ -250,6 +256,18 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
             lateast_P = pnp_P.cast<float>();
             lateast_R = pnp_R.cast<float>();
         }
+
+        // 向全局优化器提供视觉里程信息
+        if (globalOptimization != nullptr) {
+            globalOptimization->inputOdom(timeStamp, lateast_P.cast<double>(), Eigen::Quaterniond(lateast_R.cast<double>()));
+            // 更新latest_P & lateast_R
+            Eigen::Vector3d odomP;
+            Eigen::Quaterniond odomQ;
+            globalOptimization->getGlobalOdom(odomP,odomQ);
+            lateast_P = odomP.cast<float>();
+            lateast_R = odomQ.toRotationMatrix().cast<float>();
+        }
+
         if (ui_main || start_show == false ||
             vins.solver_flag != VINS::NON_LINEAR)  //show image and AR
         {
