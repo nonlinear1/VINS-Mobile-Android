@@ -80,7 +80,7 @@ public:
     //map<int, pair <int, pair< Vector3f, vector<Vector3f> > > > Ground;
     //map<int, pair <int, Vector3f > > Ground;
     vector<GroundPoint> Grounds;
-    
+    Vector3f latestGroundPlanePoint;
     int Ground_idx;
     
     
@@ -134,6 +134,10 @@ private:
     Vector3f findZfromXY(Vector3f point, Vector4f plane);
     Vector4f findPlane(vector<Vector3f> &point_cloud);
     Vector3f findGround(vector<Vector3f> &point_cloud, vector<Vector3f> &inlier_points);
+
+    void
+    drawArrow(Mat &result, Vector3f position, Vector3f direction, Vector3f P_latest, Matrix3f R_latest,
+              bool inAR);
 };
 
 #endif /* draw_result_hpp */

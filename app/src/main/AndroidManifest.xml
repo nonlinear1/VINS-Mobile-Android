@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name="com.vell.vins.JavaCameraActivity"
             android:configChanges="keyboardHidden|orientation"
             android:screenOrientation="landscape">
             <intent-filter>

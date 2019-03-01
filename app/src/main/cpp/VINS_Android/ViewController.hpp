@@ -373,6 +373,14 @@ public:
         return vins.init_status == VINS::InitStatus::SUCC;
     }
 
+    void enableAR(bool isAR) {
+        switchUI(isAR);
+    }
+
+    Vector3f getLatestGroundCenter() {
+        return vins.drawresult.latestGroundPlanePoint;
+    }
+
     std::mutex viewUpdateMutex;
     std::string tvXText;
     std::string tvYText;
@@ -424,6 +432,7 @@ public:
     vector<IMU_MSG_LOCAL> getImuMeasurements(double header);
 
     void recv_imu(const ImuConstPtr &imu_msg);
+
     void send_imu(const ImuConstPtr &imu_msg);
 
     //TODO: solve quick fix

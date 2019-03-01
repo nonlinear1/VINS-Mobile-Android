@@ -34,6 +34,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -49,6 +50,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.IntStream;
 
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
@@ -118,10 +120,18 @@ public class JavaCameraActivity extends Activity {
                     e.printStackTrace();
                 }
             }
+
+            final StringBuilder infoBuilder = new StringBuilder();
+            float[] pos = VinsUtils.getLatestPosition();
+            float[] ang = VinsUtils.getLatestEulerAngles();
+            infoBuilder.append(String.format(Locale.CHINA, "pos: %.2f %.2f %.2f\n", pos[0], pos[1], pos[2]));
+            infoBuilder.append(String.format(Locale.CHINA, "ang: %.2f %.2f %.2f\n", ang[0], ang[1], ang[2]));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     ((ImageView) findViewById(R.id.java_camera_view)).setImageBitmap(originBitmap);
+
+                    ((TextView) findViewById(R.id.tv_info)).setText(infoBuilder.toString());
                 }
             });
             image.close();
@@ -142,6 +152,7 @@ public class JavaCameraActivity extends Activity {
 
                 if (vins != null) {
                     vins.init(getCameraCharacteristics(cameraDevice));
+                    VinsUtils.enableAR(true);
                 }
 
             } catch (CameraAccessException e) {

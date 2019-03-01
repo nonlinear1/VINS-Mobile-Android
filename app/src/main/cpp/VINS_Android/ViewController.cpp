@@ -196,7 +196,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
             //img_msg callback
             m_buf.lock();
             img_msg_buf.push(img_msg);
-            LOGI("Img timestamp %lf",img_msg_buf.front()->header);
+            LOGI("Img timestamp %lf", img_msg_buf.front()->header);
             m_buf.unlock();
             con.notify_one();
             if (imageCacheEnabled) {
@@ -256,7 +256,8 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
             if (vins.solver_flag == VINS::NON_LINEAR && start_show) {
                 cv::Mat tmp;
                 vins.drawresult.startInit = true;
-                vins.drawresult.drawAR(vins.imageAI, vins.correct_point_cloud, lateast_P,
+                vins.drawresult.drawAR(vins.imageAI, vins.correct_point_cloud,
+                                       lateast_P,
                                        lateast_R);
 
                 cv::cvtColor(image, tmp, CV_RGBA2RGB);
@@ -292,7 +293,7 @@ void ViewController::processImage(cv::Mat &image, double timeStamp, bool isScree
                 vins.drawresult.radius = virtualCamDistance;
                 // Rotation:
                 vins.drawresult.theta = 75; // around horizontal - pitch
-                vins.drawresult.phy = 89; // around vertical - yaw
+                vins.drawresult.phy = 75; // around vertical - yaw
                 vins.drawresult.Reprojection(vins.image_show, vins.correct_point_cloud,
                                              vins.correct_Rs, vins.correct_Ps, box_in_trajectory);
             }
