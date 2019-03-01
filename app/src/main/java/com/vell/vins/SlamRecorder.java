@@ -109,13 +109,13 @@ public class SlamRecorder {
 
     public void recvImage(final double timeSec, final Mat originMat) {
         if (isRecording) {
+            final Mat bgrMat = new Mat();
+            Imgproc.cvtColor(originMat, bgrMat, Imgproc.COLOR_RGB2BGR);
             recordHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     String fileName = String.format(Locale.CHINA, "%.6f.jpg", timeSec);
                     File imageFile = new File(imageSaveDir, fileName);
-                    Mat bgrMat = new Mat();
-                    Imgproc.cvtColor(originMat, bgrMat, Imgproc.COLOR_RGB2BGR);
 
                     if (Imgcodecs.imwrite(imageFile.getAbsolutePath(), bgrMat)) {
                         try {

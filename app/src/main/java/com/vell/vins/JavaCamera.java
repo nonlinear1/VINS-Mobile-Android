@@ -8,6 +8,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.ImageReader;
 import android.os.Handler;
@@ -18,7 +19,11 @@ import android.view.Surface;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON;
+import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_AUTO_FLASH;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
+import static android.hardware.camera2.CameraMetadata.CONTROL_CAPTURE_INTENT_MOTION_TRACKING;
+import static android.hardware.camera2.CameraMetadata.CONTROL_CAPTURE_INTENT_VIDEO_RECORD;
 
 public class JavaCamera {
     private static final String TAG = JavaCamera.class.getSimpleName();
@@ -130,14 +135,17 @@ public class JavaCamera {
             e.printStackTrace();
         }
 
+        captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         // 不自动对焦,自动对焦会影响相机内参
         captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CONTROL_AF_MODE_OFF);
+        // 自动曝光
+        captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CONTROL_AE_MODE_ON);
 //        captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, 2.0f);
         // 固定iso
 //        captureBuilder.set(CaptureRequest.SENSOR_SENSITIVITY,);
 
-        // 不自动白平衡
-//        captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_OFF);
+        // 自动白平衡
+        captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO);
 
         //output Surface
         List<Surface> outputSurfaces = new ArrayList<>();

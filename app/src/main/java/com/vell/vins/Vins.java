@@ -37,29 +37,26 @@ public class Vins implements SensorEventListener, LocationListener {
     }
 
     public void recvImage(final long imageTimestamp, final Mat originMat) {
-        final long timeUsec =
-                TimeUnit.NANOSECONDS.toMicros(imageTimestamp + cameraTimestampsShiftWrtSensors);
-        double timeSec = timeUsec / 1000000.0;
-        timeSec += sensorTimestampDalta;
+        double timeSec = (imageTimestamp + cameraTimestampsShiftWrtSensors) / 1000000000.0 + sensorTimestampDalta;
 
-        Log.d(TAG, "imageTimestamp: " + timeSec);
+        Log.d(TAG, String.format("recvImage: %f", timeSec));
 
         slamRecorder.recvImage(timeSec, originMat);
         VinsUtils.recvImage(timeSec, originMat.nativeObj);
     }
 
-    public void recvImu(double timeSec, final double ax, final double ay, final double az, final double gx, final double gy, final double gz) {
-        timeSec += sensorTimestampDalta;
+    public void recvImu(long timeNanos, final double ax, final double ay, final double az, final double gx, final double gy, final double gz) {
+        double timeSec = timeNanos / 1000000000.0 + sensorTimestampDalta;
 
-        Log.d(TAG, String.format("imuTimestamp: %f,%f,%f,%f,%f,%f,%f", timeSec, ax, ay, az, gx, gy, gz));
+        Log.d(TAG, String.format("recvImu: %f,%f,%f,%f,%f,%f,%f", timeSec, ax, ay, az, gx, gy, gz));
 
         slamRecorder.recvImu(timeSec, ax, ay, az, gx, gy, gz);
         VinsUtils.recvImu(timeSec, ax, ay, az, gx, gy, gz);
     }
 
-    public void recvGPS(double timeSec, final double latitude, final double longitude, final double altitude,
+    public void recvGPS(long timeNanos, final double latitude, final double longitude, final double altitude,
                         final double posAccuracy) {
-        timeSec += sensorTimestampDalta;
+        double timeSec = timeNanos / 1000000000.0 + sensorTimestampDalta;
 
         Log.d(TAG, String.format("recvGPS: %f,%f,%f,%f,%f", timeSec, latitude, longitude, altitude, posAccuracy));
 
@@ -88,15 +85,14 @@ public class Vins implements SensorEventListener, LocationListener {
                 break;
         }
         if (lastAccSensorEvent != null && lastGyrSensorEvent != null && lastAccSensorEvent.timestamp == lastGyrSensorEvent.timestamp) {
-            long timeUsec = lastAccSensorEvent.timestamp / 1000;
-            double timeSec = timeUsec / 1000000.0;
+            long timeNanos = lastAccSensorEvent.timestamp;
             double ax = lastAccSensorEvent.values[0];
             double ay = lastAccSensorEvent.values[1];
             double az = lastAccSensorEvent.values[2];
             double gx = lastGyrSensorEvent.values[0];
             double gy = lastGyrSensorEvent.values[1];
             double gz = lastGyrSensorEvent.values[2];
-            recvImu(timeSec, ax, ay, az, gx, gy, gz);
+            recvImu(timeNanos, ax, ay, az, gx, gy, gz);
         }
 
     }
@@ -112,9 +108,9 @@ public class Vins implements SensorEventListener, LocationListener {
         double longitude = location.getLongitude();
         double altitude = location.getAltitude();
         double accuracy = location.getAccuracy();
-        double timeSec = TimeUnit.NANOSECONDS.toMicros(location.getElapsedRealtimeNanos());
+        long timeNanos = location.getElapsedRealtimeNanos();
 
-        recvGPS(timeSec, latitude, longitude, altitude, accuracy);
+        recvGPS(timeNanos, latitude, longitude, altitude, accuracy);
     }
 
     @Override
